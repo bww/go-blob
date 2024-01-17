@@ -5,6 +5,7 @@ go 1.21.4
 require (
 	cloud.google.com/go/storage v1.36.0
 	github.com/bww/go-gcputil v0.2.2
+	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/oauth2 v0.16.0
 	google.golang.org/api v0.156.0

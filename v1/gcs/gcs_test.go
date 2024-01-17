@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"testing"
 	"time"
 
@@ -17,7 +18,7 @@ func TestGCSCRUD(t *testing.T) {
 	cxt, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	store, err := New(cxt, "gcs://treno-integration/bucket")
+	store, err := NewWithConfig(cxt, "gcs://treno-integration/bucket", Config{Logger: slog.Default()})
 	if !assert.Nil(t, err, fmt.Sprint(err)) {
 		return
 	}
@@ -59,9 +60,9 @@ func TestGCSCRUD(t *testing.T) {
 		return
 	}
 
-	n, err = w.Write([]byte(d1))
+	n, err = w.Write([]byte(d2)) // write second version
 	assert.NoError(t, err)
-	assert.Equal(t, len(d1), n)
+	assert.Equal(t, len(d2), n)
 	err = w.Close()
 	if !assert.NoError(t, err) {
 		return
@@ -74,7 +75,10 @@ func TestGCSCRUD(t *testing.T) {
 	if !assert.NoError(t, err) {
 		return
 	}
-	defer r1.Close()
+	err = r1.Close()
+	if !assert.NoError(t, err) {
+		return
+	}
 
 	d3, err := io.ReadAll(r1)
 	assert.NoError(t, err)
@@ -87,10 +91,13 @@ func TestGCSCRUD(t *testing.T) {
 	if !assert.NoError(t, err) {
 		return
 	}
-	defer r2.Close()
 
 	d4, err := io.ReadAll(r2)
 	assert.NoError(t, err)
 	assert.Equal(t, d2, string(d4))
+	err = r2.Close()
+	if !assert.NoError(t, err) {
+		return
+	}
 
 }
