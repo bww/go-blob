@@ -100,4 +100,24 @@ func TestGCSCRUD(t *testing.T) {
 		return
 	}
 
+	// delete our file
+	dsn = "file1"
+	fmt.Printf("~~ %s\n", dsn)
+	err = store.Delete(cxt, dsn)
+	if !assert.NoError(t, err) {
+		return
+	}
+
+	// it shouldn't exist now
+	dsn = "gcs://treno-integration/bucket/file1"
+	fmt.Printf("~~ %s\n", dsn)
+	err = store.Delete(cxt, dsn)
+	assert.NotNil(t, err)
+
+	// it still shouldn't exist now
+	dsn = "gcs://treno-integration/bucket/file1"
+	fmt.Printf("<= %s\n", dsn)
+	_, err = store.Read(cxt, dsn)
+	assert.NotNil(t, err)
+
 }

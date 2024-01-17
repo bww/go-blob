@@ -22,9 +22,9 @@ func New(cxt context.Context, dsn string) (Service, error) {
 		return nil, err
 	}
 	switch u.Scheme {
-	case "fs":
+	case fs.Scheme:
 		return fs.New(cxt, dsn)
-	case "gcs":
+	case gcs.Scheme:
 		return gcs.New(cxt, dsn)
 	default:
 		return nil, fmt.Errorf("%w: %s", blob.ErrNotSupported, dsn)

@@ -14,7 +14,7 @@ import (
 
 const (
 	Scheme       = "gcs"
-	schemePrefix = Scheme + "://"
+	schemePrefix = "gcs://"
 )
 
 var ErrInvalidBucket = errors.New("Invalid bucket")
