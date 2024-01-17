@@ -1,0 +1,15 @@
+version: '3.5'
+services:
+  
+  redis:
+    image: redis:6
+    container_name: goblob_test_gcs
+    networks:
+      - goblob_test_net
+    ports:
+      - 59022:9023
+  
+networks:
+  goblob_test_net:
+    name: goblob_test_net
+    driver: bridge
