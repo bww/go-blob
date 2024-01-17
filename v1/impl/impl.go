@@ -16,7 +16,7 @@ import (
 //
 // - `file://<root>` The local filesystem
 // - `gcs://bucket` Google Cloud Storage
-func New(cxt context.Context, dsn string) (Service, error) {
+func New(cxt context.Context, dsn string) (blob.Service, error) {
 	u, err := url.Parse(dsn)
 	if err != nil {
 		return nil, err
@@ -37,6 +37,6 @@ func New(cxt context.Context, dsn string) (Service, error) {
 //
 // After the client is created, the resource URL may be used as input to
 // perform operations on it.
-func NewForResource(cxt context.Context, rc string) (Service, error) {
+func NewForResource(cxt context.Context, rc string) (blob.Service, error) {
 	return New(cxt, rc)
 }

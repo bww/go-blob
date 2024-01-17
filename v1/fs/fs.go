@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/bww/go-blob/v1"
 )
@@ -41,6 +42,9 @@ func NewWithConfig(cxt context.Context, rc string, conf Config) (*Service, error
 }
 
 func (s *Service) path(rc string) (string, error) {
+	if !strings.HasPrefix(rc, schemePrefix) {
+		return rc, nil
+	}
 	u, err := url.Parse(rc)
 	if err != nil {
 		return "", err
@@ -54,7 +58,7 @@ func (s *Service) Read(cxt context.Context, rc string, opts ...blob.ReadOption) 
 		return nil, err
 	}
 	if s.log != nil {
-		s.log.Info("read", "rc", rc)
+		s.log.Info("read", "rc", rc, "root", s.root)
 	}
 	return os.Open(p)
 }
@@ -65,7 +69,7 @@ func (s *Service) Write(cxt context.Context, rc string, opts ...blob.WriteOption
 		return nil, err
 	}
 	if s.log != nil {
-		s.log.Info("write", "rc", rc)
+		s.log.Info("write", "rc", rc, "root", s.root)
 	}
 	return os.OpenFile(p, os.O_RDWR|os.O_CREATE, 0644)
 }
@@ -76,7 +80,7 @@ func (s *Service) Delete(cxt context.Context, rc string, opts ...blob.WriteOptio
 		return err
 	}
 	if s.log != nil {
-		s.log.Info("delete", "rc", rc)
+		s.log.Info("delete", "rc", rc, "root", s.root)
 	}
 	return os.Remove(p)
 }
