@@ -1,13 +1,13 @@
 version: '3.5'
 services:
   
-  redis:
-    image: redis:6
+  gcs:
+    image: oittaa/gcp-storage-emulator
     container_name: goblob_test_gcs
     networks:
       - goblob_test_net
     ports:
-      - 59022:9023
+      - 59022:8080
   
 networks:
   goblob_test_net:

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"path"
+	"strings"
 
 	"cloud.google.com/go/storage"
 	"github.com/bww/go-gcputil/auth"
@@ -17,8 +17,9 @@ import (
 var ErrCredentialNotFound = errors.New("Credential not found")
 
 type DSN struct {
-	Prefix  string
-	Options []option.ClientOption
+	ProjectId string
+	Prefix    string
+	Options   []option.ClientOption
 }
 
 func ParseDSN(dsn string) (DSN, error) {
@@ -27,7 +28,18 @@ func ParseDSN(dsn string) (DSN, error) {
 		return DSN{}, err
 	}
 
-	prefix := path.Base(u.Path)
+	var prefix string
+	if len(u.Path) > 0 {
+		p := u.Path
+		if p[0] == '/' {
+			p = p[1:]
+		}
+		if x := strings.Index(p, "/"); x > 0 {
+			prefix = p[x+1:]
+		} else {
+			prefix = p
+		}
+	}
 
 	var opts []option.ClientOption
 	if os.Getenv("STORAGE_EMULATOR_HOST") == "" {
@@ -49,7 +61,8 @@ func ParseDSN(dsn string) (DSN, error) {
 	}
 
 	return DSN{
-		Prefix:  prefix,
-		Options: opts,
+		ProjectId: u.Host,
+		Prefix:    prefix,
+		Options:   opts,
 	}, nil
 }
