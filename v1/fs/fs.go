@@ -109,3 +109,7 @@ func (s *Service) Delete(cxt context.Context, rc string, opts ...blob.WriteOptio
 	}
 	return os.Remove(p)
 }
+
+func (s *Service) String() string {
+	return schemePrefix + s.root
+}

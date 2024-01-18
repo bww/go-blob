@@ -115,3 +115,7 @@ func (s *Service) Delete(cxt context.Context, rc string, opts ...blob.WriteOptio
 	}
 	return s.bucket.Object(rc).Delete(cxt)
 }
+
+func (s *Service) String() string {
+	return s.fqbp
+}
