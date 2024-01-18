@@ -25,7 +25,7 @@ type Config struct {
 	Logger      *slog.Logger
 }
 
-type Service struct {
+type Client struct {
 	client    *storage.Client
 	bucket    *storage.BucketHandle
 	log       *slog.Logger
@@ -35,11 +35,11 @@ type Service struct {
 	config    Config
 }
 
-func New(cxt context.Context, rc string) (*Service, error) {
+func New(cxt context.Context, rc string) (*Client, error) {
 	return NewWithConfig(cxt, rc, Config{})
 }
 
-func NewWithConfig(cxt context.Context, rc string, conf Config) (*Service, error) {
+func NewWithConfig(cxt context.Context, rc string, conf Config) (*Client, error) {
 	dsn, err := ParseDSN(rc)
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func NewWithConfig(cxt context.Context, rc string, conf Config) (*Service, error
 	if err != nil {
 		return nil, err
 	}
-	return &Service{
+	return &Client{
 		client:    client,
 		bucket:    client.Bucket(dsn.Prefix),
 		log:       conf.Logger,
@@ -59,82 +59,82 @@ func NewWithConfig(cxt context.Context, rc string, conf Config) (*Service, error
 	}, nil
 }
 
-func (s *Service) path(rc string) (string, error) {
+func (c *Client) path(rc string) (string, error) {
 	if !strings.HasPrefix(rc, schemePrefix) {
 		return rc, nil // just a path
 	}
-	if !strings.HasPrefix(rc, s.fqbp) {
-		return "", fmt.Errorf("%w: expected prefix %q in %q", ErrInvalidBucket, s.fqbp, rc)
+	if !strings.HasPrefix(rc, c.fqbp) {
+		return "", fmt.Errorf("%w: expected prefix %q in %q", ErrInvalidBucket, c.fqbp, rc)
 	}
-	return rc[len(s.fqbp):], nil
+	return rc[len(c.fqbp):], nil
 }
 
-func (s *Service) Init(cxt context.Context, opts ...blob.WriteOption) error {
-	_, err := s.bucket.Attrs(cxt)
+func (c *Client) Init(cxt context.Context, opts ...blob.WriteOption) error {
+	_, err := c.bucket.Attrs(cxt)
 	if err == nil {
 		return nil // already exists
 	} else if !errors.Is(err, storage.ErrBucketNotExist) {
 		return err // only not-found is acceptable
 	}
 	var attrs *storage.BucketAttrs
-	if s.config.BucketAttrs != nil {
-		attrs = s.config.BucketAttrs
+	if c.config.BucketAttrs != nil {
+		attrs = c.config.BucketAttrs
 	} else {
 		attrs = &storage.BucketAttrs{}
 	}
-	return s.bucket.Create(cxt, s.projectId, attrs)
+	return c.bucket.Create(cxt, c.projectId, attrs)
 }
 
-func (s *Service) Read(cxt context.Context, rc string, opts ...blob.ReadOption) (io.ReadCloser, error) {
-	rc, err := s.path(rc)
+func (c *Client) Read(cxt context.Context, rc string, opts ...blob.ReadOption) (io.ReadCloser, error) {
+	rc, err := c.path(rc)
 	if err != nil {
 		return nil, err
 	}
-	if s.log != nil {
-		s.log.Info("read", "rc", rc)
+	if c.log != nil {
+		c.log.Info("read", "rc", rc)
 	}
-	return s.bucket.Object(rc).NewReader(cxt)
+	return c.bucket.Object(rc).NewReader(cxt)
 }
 
-func (s *Service) Accessor(cxt context.Context, rc string, opts ...blob.ReadOption) (string, error) {
-	rc, err := s.path(rc)
+func (c *Client) Accessor(cxt context.Context, rc string, opts ...blob.ReadOption) (string, error) {
+	rc, err := c.path(rc)
 	if err != nil {
 		return "", err
 	}
-	if s.log != nil {
-		s.log.Info("accessor", "rc", rc)
+	if c.log != nil {
+		c.log.Info("accessor", "rc", rc)
 	}
 	params := &storage.SignedURLOptions{
 		Scheme:  storage.SigningSchemeV4,
 		Method:  "GET",
 		Expires: time.Now().Add(15 * time.Minute),
 	}
-	return s.bucket.SignedURL(rc, params)
+	return c.bucket.SignedURL(rc, params)
 
 }
 
-func (s *Service) Write(cxt context.Context, rc string, opts ...blob.WriteOption) (io.WriteCloser, error) {
-	rc, err := s.path(rc)
+func (c *Client) Write(cxt context.Context, rc string, opts ...blob.WriteOption) (io.WriteCloser, error) {
+	rc, err := c.path(rc)
 	if err != nil {
 		return nil, err
 	}
-	if s.log != nil {
-		s.log.Info("write", "rc", rc)
+	if c.log != nil {
+		c.log.Info("write", "rc", rc)
 	}
-	return s.bucket.Object(rc).NewWriter(cxt), nil
+	return c.bucket.Object(rc).NewWriter(cxt), nil
 }
 
-func (s *Service) Delete(cxt context.Context, rc string, opts ...blob.WriteOption) error {
-	rc, err := s.path(rc)
+func (c *Client) Delete(cxt context.Context, rc string, opts ...blob.WriteOption) error {
+	rc, err := c.path(rc)
 	if err != nil {
 		return err
 	}
-	if s.log != nil {
-		s.log.Info("delete", "rc", rc)
+	if c.log != nil {
+		c.log.Info("delete", "rc", rc)
 	}
-	return s.bucket.Object(rc).Delete(cxt)
+	return c.bucket.Object(rc).Delete(cxt)
 }
 
-func (s *Service) String() string {
-	return s.fqbp
+func (c *Client) String() string {
+	return c.fqbp
 }

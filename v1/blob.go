@@ -5,7 +5,7 @@ import (
 	"io"
 )
 
-type Service interface {
+type Client interface {
 	// Init initializes a blob client in an implementation-specific way; for example, by creating the root path or GCS bucket it uses
 	Init(cxt context.Context, opts ...WriteOption) error
 	// Read obtains a stream to the specified resource
