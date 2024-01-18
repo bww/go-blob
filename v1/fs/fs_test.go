@@ -97,6 +97,20 @@ func TestFSCRUD(t *testing.T) {
 		return
 	}
 
+	// obtain an accessor for the resource, which is just a file:// url
+	dsn = "file1"
+	fmt.Printf("<= %s\n", dsn)
+	a1, err := store.Accessor(cxt, dsn)
+	assert.NoError(t, err)
+	assert.Equal(t, base+"/file1", a1)
+
+	// do it the other way
+	dsn = base + "/file1"
+	fmt.Printf("<= %s\n", dsn)
+	a2, err := store.Accessor(cxt, dsn)
+	assert.NoError(t, err)
+	assert.Equal(t, base+"/file1", a2)
+
 	// delete our file
 	dsn = "file1"
 	fmt.Printf("~~ %s\n", dsn)
@@ -115,6 +129,12 @@ func TestFSCRUD(t *testing.T) {
 	dsn = base + "/file1"
 	fmt.Printf("<= %s\n", dsn)
 	_, err = store.Read(cxt, dsn)
+	assert.NotNil(t, err)
+
+	// accessors also don't work on nonexistent files
+	dsn = base + "/file1"
+	fmt.Printf("<= %s\n", dsn)
+	_, err = store.Accessor(cxt, dsn)
 	assert.NotNil(t, err)
 
 }

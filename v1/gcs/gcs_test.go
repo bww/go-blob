@@ -102,6 +102,18 @@ func TestGCSCRUD(t *testing.T) {
 		return
 	}
 
+	// this doesn't work under emulation; we expect failure but we should try to improve this
+	dsn = "file1"
+	fmt.Printf("<= %s\n", dsn)
+	_, err = store.Accessor(cxt, dsn)
+	assert.NotNil(t, err)
+
+	// same here
+	dsn = "gcs://treno-integration/bucket/file1"
+	fmt.Printf("<= %s\n", dsn)
+	_, err = store.Accessor(cxt, dsn)
+	assert.NotNil(t, err)
+
 	// delete our file
 	dsn = "file1"
 	fmt.Printf("~~ %s\n", dsn)
@@ -117,9 +129,21 @@ func TestGCSCRUD(t *testing.T) {
 	assert.NotNil(t, err)
 
 	// it still shouldn't exist now
+	dsn = "file1"
+	fmt.Printf("<= %s\n", dsn)
+	_, err = store.Read(cxt, dsn)
+	assert.NotNil(t, err)
+
+	// check it this way
 	dsn = "gcs://treno-integration/bucket/file1"
 	fmt.Printf("<= %s\n", dsn)
 	_, err = store.Read(cxt, dsn)
+	assert.NotNil(t, err)
+
+	// this one either
+	dsn = "gcs://treno-integration/bucket/file1"
+	fmt.Printf("<= %s\n", dsn)
+	_, err = store.Accessor(cxt, dsn)
 	assert.NotNil(t, err)
 
 }

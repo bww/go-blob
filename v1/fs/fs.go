@@ -70,6 +70,24 @@ func (s *Service) Read(cxt context.Context, rc string, opts ...blob.ReadOption) 
 	return os.Open(p)
 }
 
+func (s *Service) Accessor(cxt context.Context, rc string, opts ...blob.ReadOption) (string, error) {
+	p, err := s.path(rc)
+	if err != nil {
+		return "", err
+	}
+	if s.log != nil {
+		s.log.Info("accessor", "rc", rc, "root", s.root)
+	}
+	_, err = os.Stat(p)
+	if err != nil {
+		return "", err
+	}
+	return (&url.URL{
+		Scheme: "file",
+		Path:   p,
+	}).String(), nil
+}
+
 func (s *Service) Write(cxt context.Context, rc string, opts ...blob.WriteOption) (io.WriteCloser, error) {
 	p, err := s.path(rc)
 	if err != nil {
