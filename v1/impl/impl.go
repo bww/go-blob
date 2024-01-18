@@ -6,8 +6,8 @@ import (
 	"net/url"
 
 	"github.com/bww/go-blob/v1"
-	"github.com/bww/go-blob/v1/fs"
-	"github.com/bww/go-blob/v1/gcs"
+	"github.com/bww/go-blob/v1/impl/fs"
+	"github.com/bww/go-blob/v1/impl/gcs"
 )
 
 // New creates a blob service for the specified DSN. If no such backend is

@@ -1,36 +1,31 @@
-package gcs
+package fs
 
 import (
 	"context"
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
 	"testing"
 	"time"
 
-	"cloud.google.com/go/storage"
+	"github.com/bww/go-util/v1/errors"
+	"github.com/bww/go-util/v1/text"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGCSCRUD(t *testing.T) {
+func TestFSCRUD(t *testing.T) {
 	var dsn string
 
 	cxt, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	store, err := NewWithConfig(cxt, "gcs://treno-integration/bucket", Config{Logger: slog.Default()})
-	if !assert.Nil(t, err, fmt.Sprint(err)) {
-		return
-	}
+	root := text.Coalesce(os.Getenv("GOBLOB_FS_ROOT"), errors.Must(os.Getwd()))
+	base := "file://" + root
 
-	// we must create the bucket for testing; in normal usage, the bucket
-	// is expected to exist before we interact with it
-	_, err = store.bucket.Attrs(cxt)
-	if err != nil {
-		err = store.bucket.Create(cxt, store.projectId, &storage.BucketAttrs{})
-		if !assert.NoError(t, err) {
-			return
-		}
+	store, err := NewWithConfig(cxt, base, Config{Logger: slog.Default()})
+	if !assert.NoError(t, err) {
+		return
 	}
 
 	d1 := `Hello, this is the data.`
@@ -53,7 +48,7 @@ func TestGCSCRUD(t *testing.T) {
 	}
 
 	// this is the same resource, using the URL resource indicator
-	dsn = "gcs://treno-integration/bucket/file1"
+	dsn = base + "/file1"
 	fmt.Printf("=> %s\n", dsn)
 	w, err = store.Write(cxt, dsn)
 	if !assert.NoError(t, err) {
@@ -86,7 +81,7 @@ func TestGCSCRUD(t *testing.T) {
 	}
 
 	// the result must be the second file for both
-	dsn = "gcs://treno-integration/bucket/file1"
+	dsn = base + "/file1"
 	fmt.Printf("<= %s\n", dsn)
 	r2, err := store.Read(cxt, dsn)
 	if !assert.NoError(t, err) {
@@ -102,17 +97,19 @@ func TestGCSCRUD(t *testing.T) {
 		return
 	}
 
-	// this doesn't work under emulation; we expect failure but we should try to improve this
+	// obtain an accessor for the resource, which is just a file:// url
 	dsn = "file1"
 	fmt.Printf("<= %s\n", dsn)
-	_, err = store.Accessor(cxt, dsn)
-	assert.NotNil(t, err)
+	a1, err := store.Accessor(cxt, dsn)
+	assert.NoError(t, err)
+	assert.Equal(t, base+"/file1", a1)
 
-	// same here
-	dsn = "gcs://treno-integration/bucket/file1"
+	// do it the other way
+	dsn = base + "/file1"
 	fmt.Printf("<= %s\n", dsn)
-	_, err = store.Accessor(cxt, dsn)
-	assert.NotNil(t, err)
+	a2, err := store.Accessor(cxt, dsn)
+	assert.NoError(t, err)
+	assert.Equal(t, base+"/file1", a2)
 
 	// delete our file
 	dsn = "file1"
@@ -123,25 +120,19 @@ func TestGCSCRUD(t *testing.T) {
 	}
 
 	// it shouldn't exist now
-	dsn = "gcs://treno-integration/bucket/file1"
+	dsn = base + "/file1"
 	fmt.Printf("~~ %s\n", dsn)
 	err = store.Delete(cxt, dsn)
 	assert.NotNil(t, err)
 
 	// it still shouldn't exist now
-	dsn = "file1"
+	dsn = base + "/file1"
 	fmt.Printf("<= %s\n", dsn)
 	_, err = store.Read(cxt, dsn)
 	assert.NotNil(t, err)
 
-	// check it this way
-	dsn = "gcs://treno-integration/bucket/file1"
-	fmt.Printf("<= %s\n", dsn)
-	_, err = store.Read(cxt, dsn)
-	assert.NotNil(t, err)
-
-	// this one either
-	dsn = "gcs://treno-integration/bucket/file1"
+	// accessors also don't work on nonexistent files
+	dsn = base + "/file1"
 	fmt.Printf("<= %s\n", dsn)
 	_, err = store.Accessor(cxt, dsn)
 	assert.NotNil(t, err)

@@ -59,6 +59,10 @@ func (s *Service) path(rc string) (string, error) {
 	}
 }
 
+func (s *Service) Init(cxt context.Context, opts ...blob.WriteOption) error {
+	return os.MkdirAll(s.root, 0750)
+}
+
 func (s *Service) Read(cxt context.Context, rc string, opts ...blob.ReadOption) (io.ReadCloser, error) {
 	p, err := s.path(rc)
 	if err != nil {

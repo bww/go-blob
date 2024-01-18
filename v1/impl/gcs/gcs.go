@@ -21,7 +21,8 @@ const (
 var ErrInvalidBucket = errors.New("Invalid bucket")
 
 type Config struct {
-	Logger *slog.Logger
+	BucketAttrs *storage.BucketAttrs
+	Logger      *slog.Logger
 }
 
 type Service struct {
@@ -31,6 +32,7 @@ type Service struct {
 	projectId string
 	prefix    string
 	fqbp      string // fully-qualified bucket prefix
+	config    Config
 }
 
 func New(cxt context.Context, rc string) (*Service, error) {
@@ -53,6 +55,7 @@ func NewWithConfig(cxt context.Context, rc string, conf Config) (*Service, error
 		projectId: dsn.ProjectId,
 		prefix:    dsn.Prefix,
 		fqbp:      fmt.Sprintf("%s%s/%s/", schemePrefix, dsn.ProjectId, dsn.Prefix),
+		config:    conf,
 	}, nil
 }
 
@@ -64,6 +67,22 @@ func (s *Service) path(rc string) (string, error) {
 		return "", fmt.Errorf("%w: expected prefix %q in %q", ErrInvalidBucket, s.fqbp, rc)
 	}
 	return rc[len(s.fqbp):], nil
+}
+
+func (s *Service) Init(cxt context.Context, opts ...blob.WriteOption) error {
+	_, err := s.bucket.Attrs(cxt)
+	if err == nil {
+		return nil // already exists
+	} else if !errors.Is(err, storage.ErrBucketNotExist) {
+		return err // only not-found is acceptable
+	}
+	var attrs *storage.BucketAttrs
+	if s.config.BucketAttrs != nil {
+		attrs = s.config.BucketAttrs
+	} else {
+		attrs = &storage.BucketAttrs{}
+	}
+	return s.bucket.Create(cxt, s.projectId, attrs)
 }
 
 func (s *Service) Read(cxt context.Context, rc string, opts ...blob.ReadOption) (io.ReadCloser, error) {
