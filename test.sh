@@ -12,6 +12,7 @@ DOCKERIZE=dockerize
 COMPOSE=docker-compose
 
 # environment
+export GOBLOB_FS_ROOT="${me_home}/test/data"
 export STORAGE_EMULATOR_HOST=localhost:59022
 
 # parse arguments
@@ -33,6 +34,11 @@ for i; do
       shift; break;;
   esac
 done
+
+if [ ! -d "$GOBLOB_FS_ROOT" ]; then
+  echo "==> $GOBLOB_FS_ROOT"
+  mkdir -p "$GOBLOB_FS_ROOT"
+fi
 
 $COMPOSE -f "$me_home/test/services.compose" up -d
 $DOCKERIZE -wait tcp://localhost:59022/ -timeout 30s

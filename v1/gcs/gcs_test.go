@@ -75,14 +75,15 @@ func TestGCSCRUD(t *testing.T) {
 	if !assert.NoError(t, err) {
 		return
 	}
-	err = r1.Close()
-	if !assert.NoError(t, err) {
-		return
-	}
 
 	d3, err := io.ReadAll(r1)
 	assert.NoError(t, err)
 	assert.Equal(t, d2, string(d3))
+
+	err = r1.Close()
+	if !assert.NoError(t, err) {
+		return
+	}
 
 	// the result must be the second file for both
 	dsn = "gcs://treno-integration/bucket/file1"
@@ -95,6 +96,7 @@ func TestGCSCRUD(t *testing.T) {
 	d4, err := io.ReadAll(r2)
 	assert.NoError(t, err)
 	assert.Equal(t, d2, string(d4))
+
 	err = r2.Close()
 	if !assert.NoError(t, err) {
 		return

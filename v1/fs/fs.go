@@ -42,14 +42,21 @@ func NewWithConfig(cxt context.Context, rc string, conf Config) (*Service, error
 }
 
 func (s *Service) path(rc string) (string, error) {
-	if !strings.HasPrefix(rc, schemePrefix) {
-		return rc, nil
+	var p string
+	if strings.HasPrefix(rc, schemePrefix) {
+		u, err := url.Parse(rc)
+		if err != nil {
+			return "", err
+		}
+		p = u.Path
+	} else {
+		p = rc
 	}
-	u, err := url.Parse(rc)
-	if err != nil {
-		return "", err
+	if strings.HasPrefix(p, s.root) {
+		return p, nil
+	} else {
+		return path.Join(s.root, p), nil
 	}
-	return path.Join(s.root, u.Path), nil
 }
 
 func (s *Service) Read(cxt context.Context, rc string, opts ...blob.ReadOption) (io.ReadCloser, error) {
@@ -71,7 +78,7 @@ func (s *Service) Write(cxt context.Context, rc string, opts ...blob.WriteOption
 	if s.log != nil {
 		s.log.Info("write", "rc", rc, "root", s.root)
 	}
-	return os.OpenFile(p, os.O_RDWR|os.O_CREATE, 0644)
+	return os.OpenFile(p, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 }
 
 func (s *Service) Delete(cxt context.Context, rc string, opts ...blob.WriteOption) error {

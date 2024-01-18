@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/bww/go-util/v1/errors"
+	"github.com/bww/go-util/v1/text"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +20,10 @@ func TestFSCRUD(t *testing.T) {
 	cxt, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	store, err := NewWithConfig(cxt, "file://repo", Config{Logger: slog.Default()})
+	root := text.Coalesce(os.Getenv("GOBLOB_FS_ROOT"), errors.Must(os.Getwd()))
+	base := "file://" + root
+
+	store, err := NewWithConfig(cxt, base, Config{Logger: slog.Default()})
 	if !assert.Nil(t, err, fmt.Sprint(err)) {
 		return
 	}
@@ -42,7 +48,7 @@ func TestFSCRUD(t *testing.T) {
 	}
 
 	// this is the same resource, using the URL resource indicator
-	dsn = "gcs://treno-integration/bucket/file1"
+	dsn = base + "/file1"
 	fmt.Printf("=> %s\n", dsn)
 	w, err = store.Write(cxt, dsn)
 	if !assert.NoError(t, err) {
@@ -64,17 +70,18 @@ func TestFSCRUD(t *testing.T) {
 	if !assert.NoError(t, err) {
 		return
 	}
-	err = r1.Close()
-	if !assert.NoError(t, err) {
-		return
-	}
 
 	d3, err := io.ReadAll(r1)
 	assert.NoError(t, err)
 	assert.Equal(t, d2, string(d3))
 
+	err = r1.Close()
+	if !assert.NoError(t, err) {
+		return
+	}
+
 	// the result must be the second file for both
-	dsn = "gcs://treno-integration/bucket/file1"
+	dsn = base + "/file1"
 	fmt.Printf("<= %s\n", dsn)
 	r2, err := store.Read(cxt, dsn)
 	if !assert.NoError(t, err) {
@@ -84,6 +91,7 @@ func TestFSCRUD(t *testing.T) {
 	d4, err := io.ReadAll(r2)
 	assert.NoError(t, err)
 	assert.Equal(t, d2, string(d4))
+
 	err = r2.Close()
 	if !assert.NoError(t, err) {
 		return
@@ -98,13 +106,13 @@ func TestFSCRUD(t *testing.T) {
 	}
 
 	// it shouldn't exist now
-	dsn = "gcs://treno-integration/bucket/file1"
+	dsn = base + "/file1"
 	fmt.Printf("~~ %s\n", dsn)
 	err = store.Delete(cxt, dsn)
 	assert.NotNil(t, err)
 
 	// it still shouldn't exist now
-	dsn = "gcs://treno-integration/bucket/file1"
+	dsn = base + "/file1"
 	fmt.Printf("<= %s\n", dsn)
 	_, err = store.Read(cxt, dsn)
 	assert.NotNil(t, err)

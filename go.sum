@@ -13,6 +13,8 @@ cloud.google.com/go/storage v1.36.0/go.mod h1:M6M/3V/D3KpzMTJyPOR/HU6n2Si5QdaXYE
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/bww/go-gcputil v0.2.2 h1:dJe886C1sFdxwafsL9jWKZ+f4Y7e+BInHnYYhokewgM=
 github.com/bww/go-gcputil v0.2.2/go.mod h1:8dmS/pP88ww9HHcrsdCAdO74G9dhFTZJcuiYp7ZpqMA=
+github.com/bww/go-util v1.29.0 h1:0phQM+zFtbZhUnBDRzEyhI6ZfAecjFi2LJtaz5J2ec8=
+github.com/bww/go-util v1.29.0/go.mod h1:HKwTa4VExGOrPi5/2H0SBBw8Haf4ucjlcLR2snmfcxU=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
