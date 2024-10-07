@@ -13,6 +13,7 @@ import (
 	"github.com/bww/go-blob/v1"
 	siter "github.com/bww/go-iterator/v1"
 	"github.com/bww/go-util/v1/contexts"
+	"github.com/bww/go-util/v1/urls"
 	"google.golang.org/api/iterator"
 )
 
@@ -124,7 +125,7 @@ func (c *Client) List(cxt context.Context, rc string, opts ...blob.ReadOption) (
 				break
 			}
 			err = iter.Write(blob.Resource{
-				URL:         obj.Name,
+				URL:         urls.Join(c.fqbp, obj.Name),
 				ContentType: obj.ContentType,
 			})
 			if err != nil {

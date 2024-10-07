@@ -9,6 +9,7 @@ import (
 	"time"
 
 	siter "github.com/bww/go-iterator/v1"
+	"github.com/bww/go-util/v1/urls"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +19,8 @@ func TestGCSCRUD(t *testing.T) {
 	cxt, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	store, err := NewWithConfig(cxt, "gcs://treno-integration/bucket", Config{Logger: slog.Default()})
+	fqbp := "gcs://treno-integration/bucket"
+	store, err := NewWithConfig(cxt, fqbp, Config{Logger: slog.Default()})
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -135,8 +137,8 @@ func TestGCSCRUD(t *testing.T) {
 	}
 
 	assert.Equal(t, map[string]struct{}{
-		"A/file1":   {},
-		"A/B/file1": {},
+		urls.Join(fqbp, "A/file1"):   {},
+		urls.Join(fqbp, "A/B/file1"): {},
 	}, tree)
 
 	// this doesn't work under emulation; we expect failure but we should try to improve this
