@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	siter "github.com/bww/go-iterator/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -96,6 +97,47 @@ func TestGCSCRUD(t *testing.T) {
 	if !assert.NoError(t, err) {
 		return
 	}
+
+	// create some files under a directory
+	dsn = "A/file1"
+	fmt.Printf("<= %s\n", dsn)
+	w, err = store.Write(cxt, dsn)
+	assert.NoError(t, err)
+
+	n, err = w.Write([]byte(d1))
+	assert.NoError(t, err)
+	assert.Equal(t, len(d1), n)
+	assert.NoError(t, w.Close())
+
+	dsn = "A/B/file1"
+	fmt.Printf("<= %s\n", dsn)
+	w, err = store.Write(cxt, dsn)
+	assert.NoError(t, err)
+
+	n, err = w.Write([]byte(d1))
+	assert.NoError(t, err)
+	assert.NoError(t, w.Close())
+
+	tree := make(map[string]struct{})
+	iter, err := store.List(cxt, "A/")
+	if assert.NoError(t, err) {
+		for {
+			rc, err := iter.Next()
+			if siter.IsFinished(err) {
+				break
+			} else if !assert.NoError(t, err) {
+				break
+			}
+			p := rc.URL
+			fmt.Printf("<... %v\n", p)
+			tree[p] = struct{}{}
+		}
+	}
+
+	assert.Equal(t, map[string]struct{}{
+		"A/file1":   {},
+		"A/B/file1": {},
+	}, tree)
 
 	// this doesn't work under emulation; we expect failure but we should try to improve this
 	dsn = "file1"

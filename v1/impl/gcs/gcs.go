@@ -12,7 +12,11 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/bww/go-blob/v1"
 	siter "github.com/bww/go-iterator/v1"
+	"github.com/bww/go-util/v1/contexts"
+	"google.golang.org/api/iterator"
 )
+
+const pagelen = 64
 
 const (
 	Scheme       = "gcs"
@@ -98,8 +102,39 @@ func (c *Client) Read(cxt context.Context, rc string, opts ...blob.ReadOption) (
 }
 
 func (c *Client) List(cxt context.Context, rc string, opts ...blob.ReadOption) (siter.Iterator[blob.Resource], error) {
-	// NOT IMPLEMENTED YET
-	return nil, nil
+	rc, err := c.path(rc)
+	if err != nil {
+		return nil, err
+	}
+	if c.log != nil {
+		c.log.Info("list", "rc", rc)
+	}
+
+	objs := c.bucket.Objects(cxt, &storage.Query{Prefix: rc})
+	iter := siter.NewWithContext(cxt, make(chan siter.Result[blob.Resource], pagelen))
+	go func() {
+		defer iter.Close()
+		for contexts.Continue(cxt) {
+			obj, err := objs.Next()
+			if errors.Is(err, iterator.Done) {
+				// no more elements
+				break
+			} else if err != nil {
+				iter.Cancel(err)
+				break
+			}
+			err = iter.Write(blob.Resource{
+				URL:         obj.Name,
+				ContentType: obj.ContentType,
+			})
+			if err != nil {
+				// already canceled
+				break
+			}
+		}
+	}()
+
+	return iter, nil
 }
 
 func (c *Client) Accessor(cxt context.Context, rc string, opts ...blob.ReadOption) (string, error) {

@@ -14,6 +14,7 @@ DRIVER=go
 
 # environment
 export GOBLOB_FS_ROOT="${me_home}/test/data"
+export GOBLOB_FIXTURES="${me_home}/test/fixtures"
 export STORAGE_EMULATOR_HOST=localhost:59022
 
 # parse arguments

@@ -21,9 +21,10 @@ func TestFSCRUD(t *testing.T) {
 	cxt, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
+	fixt := text.Coalesce(os.Getenv("GOBLOB_FIXTURES"), errors.Must(os.Getwd()))
 	root := text.Coalesce(os.Getenv("GOBLOB_FS_ROOT"), errors.Must(os.Getwd()))
-	base := "file://" + root
 
+	base := "file://" + root
 	store, err := NewWithConfig(cxt, base, Config{Logger: slog.Default()})
 	if !assert.NoError(t, err) {
 		return
@@ -137,6 +138,13 @@ func TestFSCRUD(t *testing.T) {
 	fmt.Printf("<= %s\n", dsn)
 	_, err = store.Accessor(cxt, dsn)
 	assert.NotNil(t, err)
+
+	// create a store for tree traversal
+	base = "file://" + fixt
+	store, err = NewWithConfig(cxt, base, Config{Logger: slog.Default()})
+	if !assert.NoError(t, err) {
+		return
+	}
 
 	// list pre-existing files in the store
 	tree := make(map[string]struct{})
