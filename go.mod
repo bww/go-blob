@@ -1,11 +1,14 @@
 module github.com/bww/go-blob
 
-go 1.21.4
+go 1.22.3
+
+toolchain go1.23.2
 
 require (
 	cloud.google.com/go/storage v1.36.0
 	github.com/bww/go-gcputil v0.2.2
-	github.com/sirupsen/logrus v1.9.3
+	github.com/bww/go-iterator v0.1.0
+	github.com/bww/go-util v1.29.0
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/oauth2 v0.16.0
 	google.golang.org/api v0.156.0
@@ -16,7 +19,6 @@ require (
 	cloud.google.com/go/compute v1.23.3 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/iam v1.1.5 // indirect
-	github.com/bww/go-util v1.29.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.3.0 // indirect

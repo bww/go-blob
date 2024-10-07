@@ -2,7 +2,7 @@ package blob
 
 type ReadConfig struct{}
 
-func (c ReadConfig) WithOptions(opts ...ReadOption) ReadConfig {
+func (c ReadConfig) WithOptions(opts []ReadOption) ReadConfig {
 	for _, opt := range opts {
 		c = opt(c)
 	}
@@ -11,9 +11,11 @@ func (c ReadConfig) WithOptions(opts ...ReadOption) ReadConfig {
 
 type ReadOption func(ReadConfig) ReadConfig
 
-type WriteConfig struct{}
+type WriteConfig struct {
+	ContentType string
+}
 
-func (c WriteConfig) WithOptions(opts ...WriteOption) WriteConfig {
+func (c WriteConfig) WithOptions(opts []WriteOption) WriteConfig {
 	for _, opt := range opts {
 		c = opt(c)
 	}
@@ -21,3 +23,10 @@ func (c WriteConfig) WithOptions(opts ...WriteOption) WriteConfig {
 }
 
 type WriteOption func(WriteConfig) WriteConfig
+
+func WithContentType(t string) WriteOption {
+	return func(c WriteConfig) WriteConfig {
+		c.ContentType = t
+		return c
+	}
+}

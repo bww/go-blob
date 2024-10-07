@@ -10,6 +10,7 @@ me_home=$(cd "$me_home" && pwd)
 # deps
 DOCKERIZE=dockerize
 COMPOSE=docker-compose
+DRIVER=go
 
 # environment
 export GOBLOB_FS_ROOT="${me_home}/test/data"
@@ -23,6 +24,7 @@ for i; do
   in
     -d)
       debug="true";
+      DRIVER="dlv"
       shift;;
     -c)
       other_flags="$other_flags -cover";
@@ -42,6 +44,5 @@ fi
 
 $COMPOSE -f "$me_home/test/services.compose" up -d
 $DOCKERIZE -wait tcp://localhost:59022/ -timeout 30s
-go test$other_flags $*
+$DRIVER test$other_flags $*
 $COMPOSE -f "$me_home/test/services.compose" down
-

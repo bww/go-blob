@@ -1,6 +1,5 @@
-version: '3.5'
 services:
-  
+
   gcs:
     image: oittaa/gcp-storage-emulator
     container_name: goblob_test_gcs
@@ -8,7 +7,7 @@ services:
       - goblob_test_net
     ports:
       - 59022:8080
-  
+
 networks:
   goblob_test_net:
     name: goblob_test_net

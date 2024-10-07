@@ -10,7 +10,13 @@ import (
 	"strings"
 
 	"github.com/bww/go-blob/v1"
+	"github.com/bww/go-util/v1/contexts"
+	"github.com/bww/go-util/v1/urls"
+
+	siter "github.com/bww/go-iterator/v1"
 )
+
+const pagelen = 64
 
 const (
 	Scheme       = "file"
@@ -71,7 +77,89 @@ func (c *Client) Read(cxt context.Context, rc string, opts ...blob.ReadOption) (
 	if c.log != nil {
 		c.log.Info("read", "rc", rc, "root", c.root)
 	}
-	return os.Open(p)
+	r, err := os.Open(p)
+	if err != nil && os.IsNotExist(err) {
+		return nil, blob.ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+	return r, nil
+}
+
+func (c *Client) List(cxt context.Context, rc string, opts ...blob.ReadOption) (siter.Iterator[blob.Resource], error) {
+	p, err := c.path(rc)
+	if err != nil {
+		return nil, err
+	}
+	if c.log != nil {
+		c.log.Info("list", "rc", rc, "root", c.root)
+	}
+
+	r, err := os.Open(p)
+	if err != nil && os.IsNotExist(err) {
+		return nil, blob.ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+
+	v, err := r.Stat()
+	if err != nil {
+		return nil, err
+	}
+	if !v.IsDir() { // short circut for single-element result
+		return siter.NewWithSlice(cxt, []blob.Resource{{
+			URL: rc,
+		}}), nil
+	}
+
+	iter := siter.NewWithContext(cxt, make(chan siter.Result[blob.Resource], pagelen))
+	go func() {
+		defer iter.Close()
+		err := c.list(cxt, rc, p, iter, r)
+		if err != nil {
+			iter.Cancel(err)
+			return
+		}
+	}()
+
+	return iter, nil
+}
+
+func (c *Client) list(cxt context.Context, rc, prefix string, iter siter.Writer[blob.Resource], f *os.File) error {
+	dirs, err := f.ReadDir(pagelen)
+	if err == io.EOF {
+		return nil // end of input
+	} else if err != nil {
+		return err
+	}
+	for _, dir := range dirs {
+		if !contexts.Continue(cxt) {
+			break // canceled
+		}
+		name := dir.Name()
+		if strings.HasPrefix(name, ".") {
+			continue // skip dotfiles
+		}
+		if dir.IsDir() {
+			p := path.Join(prefix, name)
+			d, err := os.Open(p)
+			if err != nil {
+				return err
+			}
+			err = c.list(cxt, urls.Join(rc, name), path.Join(prefix, name), iter, d)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = iter.Write(blob.Resource{
+				URL: urls.Join(rc, name),
+			})
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (c *Client) Accessor(cxt context.Context, rc string, opts ...blob.ReadOption) (string, error) {
@@ -97,6 +185,16 @@ func (c *Client) Write(cxt context.Context, rc string, opts ...blob.WriteOption)
 	if err != nil {
 		return nil, err
 	}
+
+	d := path.Dir(p)
+	_, err = os.Stat(d)
+	if os.IsNotExist(err) {
+		err = os.MkdirAll(d, 0750)
+	}
+	if err != nil {
+		return nil, err
+	}
+
 	if c.log != nil {
 		c.log.Info("write", "rc", rc, "root", c.root)
 	}

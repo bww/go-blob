@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	siter "github.com/bww/go-iterator/v1"
 	"github.com/bww/go-util/v1/errors"
 	"github.com/bww/go-util/v1/text"
 	"github.com/stretchr/testify/assert"
@@ -136,5 +137,30 @@ func TestFSCRUD(t *testing.T) {
 	fmt.Printf("<= %s\n", dsn)
 	_, err = store.Accessor(cxt, dsn)
 	assert.NotNil(t, err)
+
+	// list pre-existing files in the store
+	tree := make(map[string]struct{})
+	iter, err := store.List(cxt, base)
+	if assert.NoError(t, err) {
+		for {
+			rc, err := iter.Next()
+			if siter.IsFinished(err) {
+				break
+			} else if !assert.NoError(t, err) {
+				break
+			}
+			p := rc.URL[len(base):]
+			fmt.Printf("<... %v\n", p)
+			tree[p] = struct{}{}
+		}
+	}
+
+	assert.Equal(t, map[string]struct{}{
+		"/Z/Z/A": {},
+		"/Z/A":   {},
+		"/A":     {},
+		"/B":     {},
+		"/C":     {},
+	}, tree)
 
 }

@@ -11,6 +11,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/bww/go-blob/v1"
+	siter "github.com/bww/go-iterator/v1"
 )
 
 const (
@@ -96,6 +97,11 @@ func (c *Client) Read(cxt context.Context, rc string, opts ...blob.ReadOption) (
 	return c.bucket.Object(rc).NewReader(cxt)
 }
 
+func (c *Client) List(cxt context.Context, rc string, opts ...blob.ReadOption) (siter.Iterator[blob.Resource], error) {
+	// NOT IMPLEMENTED YET
+	return nil, nil
+}
+
 func (c *Client) Accessor(cxt context.Context, rc string, opts ...blob.ReadOption) (string, error) {
 	rc, err := c.path(rc)
 	if err != nil {
@@ -114,6 +120,7 @@ func (c *Client) Accessor(cxt context.Context, rc string, opts ...blob.ReadOptio
 }
 
 func (c *Client) Write(cxt context.Context, rc string, opts ...blob.WriteOption) (io.WriteCloser, error) {
+	conf := blob.WriteConfig{}.WithOptions(opts)
 	rc, err := c.path(rc)
 	if err != nil {
 		return nil, err
@@ -121,7 +128,11 @@ func (c *Client) Write(cxt context.Context, rc string, opts ...blob.WriteOption)
 	if c.log != nil {
 		c.log.Info("write", "rc", rc)
 	}
-	return c.bucket.Object(rc).NewWriter(cxt), nil
+	w := c.bucket.Object(rc).NewWriter(cxt)
+	if v := conf.ContentType; v != "" {
+		w.ObjectAttrs.ContentType = v
+	}
+	return w, nil
 }
 
 func (c *Client) Delete(cxt context.Context, rc string, opts ...blob.WriteOption) error {
