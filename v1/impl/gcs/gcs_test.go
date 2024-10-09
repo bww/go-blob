@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bww/go-blob/v1"
 	siter "github.com/bww/go-iterator/v1"
 	"github.com/bww/go-util/v1/urls"
 	"github.com/stretchr/testify/assert"
@@ -99,6 +100,12 @@ func TestGCSCRUD(t *testing.T) {
 	if !assert.NoError(t, err) {
 		return
 	}
+
+	// this file doesn't exist
+	dsn = "fileZ"
+	fmt.Printf("<= %s\n", dsn)
+	_, err = store.Read(cxt, dsn)
+	assert.ErrorIs(t, err, blob.ErrNotFound)
 
 	// create some files under a directory
 	dsn = "A/file1"

@@ -99,7 +99,13 @@ func (c *Client) Read(cxt context.Context, rc string, opts ...blob.ReadOption) (
 	if c.log != nil {
 		c.log.Info("read", "rc", rc)
 	}
-	return c.bucket.Object(rc).NewReader(cxt)
+	r, err := c.bucket.Object(rc).NewReader(cxt)
+	if errors.Is(err, storage.ErrObjectNotExist) {
+		return nil, blob.ErrNotFound
+	} else if err != nil {
+		return nil, err
+	}
+	return r, nil
 }
 
 func (c *Client) List(cxt context.Context, rc string, opts ...blob.ReadOption) (siter.Iterator[blob.Resource], error) {
